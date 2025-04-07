@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { useRef, useState, useLayoutEffect, useCallback, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import vertexShader from "../shaders/img.vert";
 import fragmentShader from "../shaders/img.frag";
 import { useStableScroller } from "@funtech-inc/spice";
+import { useNoise } from "@funtech-inc/use-shader-fx";
 
 interface DOMRect {
    width: number;
@@ -19,6 +20,7 @@ interface SharedUniforms {
 
 interface NoiseImageProps extends SharedUniforms {
    domElement: HTMLElement;
+   noiseTexture: THREE.Texture;
 }
 
 interface SceneProps extends SharedUniforms {
@@ -32,7 +34,6 @@ const WRAPPER_STYPE = {
    position: "absolute" as const,
    top: 0,
    left: 0,
-   zIndex: -1,
    width: "100%",
    height: "100svh",
    pointerEvents: "none" as const,
@@ -43,6 +44,7 @@ const NoiseImage = ({
    domElement,
    resolution,
    scrollOffset,
+   noiseTexture,
 }: NoiseImageProps) => {
    const stableScroller = useStableScroller();
    const meshRef = useRef<THREE.Mesh>(null);
@@ -82,7 +84,6 @@ const NoiseImage = ({
       domWH.current.set(rect.current.width, rect.current.height);
       domXY.current.set(rect.current.x, rect.current.y);
 
-      // Optimize by hiding items that are not visible
       const canvasTop = scrollOffset.y;
       const canvasBottom = canvasTop + resolution.y;
       const isVisible =
@@ -102,8 +103,9 @@ const NoiseImage = ({
                   u_domWH: { value: domWH.current },
                   u_resolution: { value: resolution },
                   u_scrollOffset: { value: scrollOffset },
+                  u_noise: { value: noiseTexture },
                }),
-               [resolution, scrollOffset]
+               [resolution, scrollOffset, noiseTexture]
             )}
             vertexShader={vertexShader}
             fragmentShader={fragmentShader}
@@ -118,17 +120,37 @@ const Scene = ({
    updateScroll,
    ...sharedUniforms
 }: SceneProps) => {
-   useFrame(() => {
-      updateScroll();
+   const { size } = useThree();
+
+   const noise = useNoise({
+      size,
+      dpr: 0.1,
+      scale: 0.1,
+      hsv: true,
+      colorBalance: true,
    });
 
-   return (
-      <>
-         {domElements.map((element, index) => (
-            <NoiseImage key={index} domElement={element} {...sharedUniforms} />
-         ))}
-      </>
-   );
+   useFrame((state) => {
+      const loop = Math.sin(state.clock.getElapsedTime()) * 0.5 + 0.5;
+      updateScroll();
+      noise.render(state, {
+         hsv: {
+            hueShift: loop,
+         },
+         colorBalance: {
+            factor: (val) => val.set(1 + loop, loop, 1 - loop),
+         },
+      });
+   });
+
+   return domElements.map((element, index) => (
+      <NoiseImage
+         key={index}
+         domElement={element}
+         {...sharedUniforms}
+         noiseTexture={noise.texture}
+      />
+   ));
 };
 
 const WebGLCanvas = () => {
