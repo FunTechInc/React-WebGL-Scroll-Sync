@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { useRef, useState, useLayoutEffect, useCallback, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import vertexShader from "../shaders/img.vert";
-import fragmentShader from "../shaders/img.frag";
 import { useStableScroller } from "@funtech-inc/spice";
 import { useNoise } from "@funtech-inc/use-shader-fx";
+import vertexShader from "../shaders/img.vert";
+import fragmentShader from "../shaders/img.frag";
 
 interface DOMRect {
    width: number;

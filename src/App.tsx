@@ -68,6 +68,24 @@ function App() {
                <WebGLView />
                <WebGLView />
             </div>
+            <div
+               style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "1em",
+                  fontSize: "13px",
+                  marginTop: "5vw",
+               }}>
+               <a
+                  href="https://github.com/FunTechInc/React-WebGL-Scroll-Sync"
+                  target="_blank">
+                  GitHub
+               </a>
+               <a href="https://www.funtech.inc/" target="_blank">
+                  FunTech
+               </a>
+            </div>
          </div>
       </StableScroller>
    );
